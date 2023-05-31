@@ -1,3 +1,5 @@
 pandas
 DateTime
 Flask
+sqlalchemy
+pytz
