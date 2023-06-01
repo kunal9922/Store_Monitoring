@@ -53,7 +53,16 @@ def read_and_store_data():
         reader = csv.reader(file)
         for row in reader:
             store_id, timestamp_utc, status = row
-            timestamp_utc = datetime.strptime(timestamp_utc, '%Y-%m-%d %H:%M:%S')
+            # Process the timestamp and status values accordingly
+            try:
+                timestamp_utc = datetime.strptime(timestamp_utc, '%Y-%m-%d %H:%M:%S')
+            except ValueError as v:
+                # Removing the unconverted data for the timestamp_utc
+                if len(v.args) > 0 and v.args[0].startswith('unconverted data remains: '):
+                    line = timestamp_utc[:-(len(v.args[0]) - 26)]
+                    timestamp_utc = datetime.strptime(line, '%Y-%m-%d %H:%M:%S')
+                else:
+                    raise
             store_status = StoreStatus(store_id=store_id, timestamp_utc=timestamp_utc, status=status)
             session.add(store_status)
 
