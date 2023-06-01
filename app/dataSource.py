@@ -2,7 +2,7 @@ import csv
 from datetime import datetime, time
 import pytz
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 class Config:
@@ -49,16 +49,26 @@ class StoreTimezone(Base):
 # Read data from CSV files and store in the database
 def read_and_store_data():
     # Read and store store status data
-    with open('store_status.csv', 'r') as file:
+    with open(r'C:\Users\HP\Downloads\store status.csv', 'r') as file:
         reader = csv.reader(file)
         for row in reader:
             store_id, timestamp_utc, status = row
-            timestamp_utc = datetime.strptime(timestamp_utc, '%Y-%m-%d %H:%M:%S')
+            # Process the timestamp and status values accordingly
+            try:
+                timestamp_utc = datetime.strptime(timestamp_utc, '%Y-%m-%d %H:%M:%S')
+            except ValueError as v:
+                if len(v.args) > 0 and v.args[0].startswith('unconverted data remains: '):
+                    line = timestamp_utc[:-(len(v.args[0]) - 26)]
+                    timestamp_utc = datetime.strptime(line, '%Y-%m-%d %H:%M:%S')
+                else:
+                    raise
+            
+
             store_status = StoreStatus(store_id=store_id, timestamp_utc=timestamp_utc, status=status)
             session.add(store_status)
 
     # Read and store store hours data
-    with open('store_hours.csv', 'r') as file:
+    with open(r"C:\Users\HP\Downloads\Menu hours.csv", 'r') as file:
         reader = csv.reader(file)
         for row in reader:
             store_id, day_of_week, start_time_local, end_time_local = row
@@ -79,7 +89,7 @@ def read_and_store_data():
             session.add(store_hours)
 
     # Read and store store timezone data
-    with open('store_timezone.csv', 'r') as file:
+    with open(r"C:\Users\HP\Downloads\store_timezone.csv", 'r') as file:
         reader = csv.reader(file)
         for row in reader:
             store_id, timezone_str = row
