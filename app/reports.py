@@ -152,3 +152,135 @@ def interpolate_store_status_records(records, start_time_local, end_time_local, 
     })
 
     return interpolated_records
+
+def calculate_uptime_last_hour(records, current_timestamp):
+    """
+    Calculates the total uptime in minutes for the last hour based on the provided records.
+
+    Parameters:
+    - records: List of dictionaries containing status records.
+    - current_timestamp: Current timestamp.
+
+    Returns:
+    - Total uptime in minutes.
+    """
+    uptime = 0
+    hour_ago = current_timestamp - timedelta(hours=1)
+
+    for record in records:
+        if record['timestamp_utc'] > hour_ago and record['timestamp_utc'] <= current_timestamp and record[
+            'status'] == 'active':
+            uptime += 1
+
+    return uptime * 60
+
+
+def calculate_downtime_last_hour(records, current_timestamp):
+    """
+    Calculates the total downtime in minutes for the last hour based on the provided records.
+
+    Parameters:
+    - records: List of dictionaries containing status records.
+    - current_timestamp: Current timestamp.
+
+    Returns:
+    - Total downtime in minutes.
+    """
+    downtime = 0
+    hour_ago = current_timestamp - timedelta(hours=1)
+
+    for record in records:
+        if record['timestamp_utc'] > hour_ago and record['timestamp_utc'] <= current_timestamp and record[
+            'status'] == 'inactive':
+            downtime += 1
+
+    return downtime * 60
+
+
+def calculate_uptime_last_day(records, current_timestamp):
+    """
+    Calculates the total uptime in minutes for the last day based on the provided records.
+
+    Parameters:
+    - records: List of dictionaries containing status records.
+    - current_timestamp: Current timestamp.
+
+    Returns:
+    - Total uptime in minutes.
+    """
+    uptime = 0
+    day_ago = current_timestamp - timedelta(days=1)
+
+    for record in records:
+        if record['timestamp_utc'] > day_ago and record['timestamp_utc'] <= current_timestamp and record[
+            'status'] == 'active':
+            uptime += 1
+
+    return uptime * 60 * 24
+
+
+def calculate_downtime_last_day(records, current_timestamp):
+    """
+    Calculates the total downtime in minutes for the last day based on the provided records.
+
+    Parameters:
+    - records: List of dictionaries containing status records.
+    - current_timestamp: Current timestamp.
+
+    Returns:
+    - Total downtime in minutes.
+    """
+    downtime = 0
+    day_ago = current_timestamp - timedelta(days=1)
+
+    for record in records:
+        if record['timestamp_utc'] > day_ago and record['timestamp_utc'] <= current_timestamp and record[
+            'status'] == 'inactive':
+            downtime += 1
+
+    return downtime * 60 * 24
+
+
+def calculate_uptime_last_week(records, current_timestamp):
+    """
+    Calculates the total uptime in minutes for the last week based on the provided records.
+
+    Parameters:
+    - records: List of dictionaries containing status records.
+    - current_timestamp: Current timestamp.
+
+    Returns:
+    - Total uptime in minutes.
+    """
+    uptime = 0
+    week_ago = current_timestamp - timedelta(days=7)
+
+    for record in records:
+        if record['timestamp_utc'] > week_ago and record['timestamp_utc'] <= current_timestamp and record[
+            'status'] == 'active':
+            uptime += 1
+
+    return uptime * 60 * 24 * 7
+
+
+def calculate_downtime_last_week(records, current_timestamp):
+    """
+    Calculates the total downtime in minutes for the last week based on the provided records.
+
+    Parameters:
+    - records: List of dictionaries containing status records.
+    - current_timestamp: Current timestamp.
+
+    Returns:
+    - Total downtime in minutes.
+    """
+    downtime = 0
+    week_ago = current_timestamp - timedelta(days=7)
+
+    for record in records:
+        if record['timestamp_utc'] > week_ago and record['timestamp_utc'] <= current_timestamp and record[
+            'status'] == 'inactive':
+            downtime += 1
+
+    return downtime * 60 * 24 * 7
+
