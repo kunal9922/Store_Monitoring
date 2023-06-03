@@ -1,18 +1,25 @@
+import json
 import csv
 from datetime import datetime, timedelta
 from pytz import timezone
 from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 from models import Config
 from models import StoreStatus, StoreHours, StoreTimezone
 
 # Set up the database connection
+
 config = Config()
+# Create an SQLite engine
 engine = create_engine(config.SQLALCHEMY_DATABASE_URI)
 Base = declarative_base()
+# Create a session factory
 Session = sessionmaker(bind=engine)
+
+# Create a session
 session = Session()
+
 
 class Report(Base):
     __tablename__ = 'reports'
@@ -34,8 +41,23 @@ class Report(Base):
         }
 
     def generate_report(self):
-        # Get the current timestamp
-        max_timestamp = session.query(StoreStatus).order_by(StoreStatus.timestamp_utc.desc()).first().timestamp_utc
+          # Get the maximum timestamp from the StoreStatus table
+        latest_record = session.query(StoreStatus).order_by(StoreStatus.timestamp_utc.desc()).first()
+        max_timestamp = None
+        if latest_record is not None:
+            max_timestamp = latest_record.timestamp_utc
+            min_timestamp = max_timestamp - timedelta(hours=24)
+            
+            # Query the records within the specified time range
+            records = session.query(StoreStatus).filter(StoreStatus.timestamp_utc >= min_timestamp, 
+                                                        StoreStatus.timestamp_utc <= max_timestamp).all()
+
+            # Generate the report based on the retrieved records
+            # ...
+        else:
+            # Handle the case when no records are found in the StoreStatus table
+            print("No records found in the StoreStatus table.")
+            # Get the current timestamp
         current_timestamp = datetime.now(tz=timezone('UTC')) if not max_timestamp else max_timestamp
 
         # Get the business hours for each store
@@ -78,16 +100,26 @@ class Report(Base):
                 'uptime_last_week': uptime_last_week,
                 'downtime_last_week': downtime_last_week
             })
-
+        # Convert the report data to JSON
+        report_data_json = json.dumps(report_data)
         # Update the report data and mark the report as complete
-        self.data = report_data
+        self.data = report_data_json
         self.status = 'Complete'
         self.completed_at = datetime.utcnow()
+        
         session.commit()
-
+        return report_data
+    
+ # Create the reports table if it doesn't exist
+Base.metadata.create_all(engine)       
 
 def interpolate_store_status_records(records, start_time_local, end_time_local, current_timestamp):
     interpolated_records = []
+    # giving the date format
+    date_format = '%H:%M:%S'
+
+    start_time_local = datetime.strptime(start_time_local, date_format)
+    end_time_local = datetime.strptime(end_time_local, date_format)
     interval = end_time_local - start_time_local
 
     # Check if there are any records available for interpolation
@@ -152,6 +184,20 @@ def interpolate_store_status_records(records, start_time_local, end_time_local, 
     })
 
     return interpolated_records
+
+def interpolate_status(previous_status, current_status, interval, num_intervals):
+    if previous_status == 'inactive' and current_status == 'active':
+        return 'active'
+    elif previous_status == 'active' and current_status == 'inactive':
+        return 'inactive'
+    else:
+        # Interpolate the status based on the interval and the number of intervals
+        interpolation = interval / num_intervals
+        if interpolation <= 0.5:
+            return previous_status
+        else:
+            return current_status
+
 
 def calculate_uptime_last_hour(records, current_timestamp):
     """
